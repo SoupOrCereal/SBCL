@@ -2,8 +2,8 @@
  * Slightly Better Console Logging
  * @example con.log("Message Here", ?{optional: object}, ?"optional_tag") // ?optional used/omitted in either order
  * @log-levels .debug, .log, .warning, .error
- * @change_log-levels_shown con.setLoggingLevel(minimumLogLevel: LoggingLevel) // initially debug
- * @toggle_anti_duplicate_logs con.setAvoidDuplicateLogs(turnOn: boolean) // initially true
+ * @change_log-levels_shown con.SetLoggingLevel(minimumLogLevel: LoggingLevel) // initially debug
+ * @toggle_timestamps con.ToggleTimestamps(showTimestamps: boolean) // initially true
  * @tags-whitelist con.Whitelist.* // ***Whitelist overrides Blacklist***
  * @tags-blacklist con.Blacklist.* // Blacklist is used when Whitelist is empty [] 
  * @summary I created this library to improve JavaScript console.log(ging), especially server logs
@@ -15,7 +15,7 @@ export const con = { // chose lowercase naming of con.'logs' to flow with JavaSc
     warning: log_warning,
     error: log_error,
     SetLoggingLevel: setLogLevel,
-    // disabled for now, keeping code encase another dev wants to impliment a anti-log-spam system SetAvoidDuplicateLogs: setAntiSpam,
+    ToggleTimestamps: toggleTimestamps,
     /** List of tags to include (only show these tags). @notice **blacklist is used when whitelist is empty []** @note you can also .setLoggingLevel() */
     WhitelistTags: {
         Add: addWhitelistTag,
@@ -56,57 +56,69 @@ function setLogLevel(minimumLoggingLevel: LoggingLevel){
 
 
 /////////////
-// Anti-spam
-// (CLOSED) After running the antispam system it seemed okay.  But, when you need the output of quickly-spammed logs for proper reference, it doesn't work well.  Disabling for now.
-// NOTE TO OTHER DEVS :: This spawned because I wanted to stop the log spam from re-rendering reacy components.  During testing I needed non-react logs that were spammed quickly and the anti-spam feature ended up hiding duplicates, which made reading the output difficult.  
-// ^ Feel free to impliment, I'd recommend focusing on react-only logs.
+// Timestamps
 /////////////
-// GET RID OF, SPAM IS ANOUYING, BUT WHEN EXPECTED AND NOT SEEN, VERY NOT HELPFUL, lol
-// ~! limit to ONLY react, that'd work. - EVEN STILL, idk, just might not be a good feature because it hides logs and shows others and makes it confusing AF
-let antiLogSpam = false
-/** Turn anti-duplicate-spam logging on/off
- * @description Helps prevent duplicate log floods (like from a React component re-rendering)
- * @param turnOn true or false
+let displayTimestamps: boolean = true
+/** Toggle whether timestamps are shown or not
+ * @description Turn log timestamps on/off
+ * @param showTimestamps true || false
  * @initially true
+ * @example ToggleTimestamps(flase) // don't show timestamps
  */
-function setAntiSpam(turnOn: boolean){
-    antiLogSpam = turnOn
-    console.log(`[SBCL] You updated anti-duplicate-logs to (${turnOn})`)
+function toggleTimestamps(showTimestamps: boolean){
+    displayTimestamps = showTimestamps
+    console.log(`[SBCL] You toggled show-timestamps to (${showTimestamps})`)
 }
-let minMSbetweenLogs = 420 // should allow for adjusting, worried people might set too high/low (though it might need adjusted so, idk, create an enum of options?)
-/** {message, timestamp} */
-class logObj {
-    message
-    timestamp
-    constructor(message, timestamp) {
-        this.message = message;
-        this.timestamp = timestamp;
-    }
-}
-let logHistory: Array<logObj> = [] // keep min log history
-/** @returns true == PASS || false == FAIL */
-function antiSpamCheck(theMsg: string): boolean{
-    if(!antiLogSpam){return true} // anti-spam turned off (auto-pass)
-    const currentTimestamp = Date.now()
-    let newLogHistory: Array<logObj> = [] // filter out older message
-    for(let i = 0; i < logHistory.length; i++){
-        const thisLog = logHistory[i] // {message, timestamp}
-        const msSinceLastLog = currentTimestamp - thisLog.timestamp
-        if(msSinceLastLog < minMSbetweenLogs){
-            newLogHistory.push(thisLog)
-            // check to see if duplicate
-            if(thisLog.message === theMsg){
-                return false // duplicate entry (return ASAP for responsiveness, when no duplicate, history is updated)
-            }
-        }else{
-            // old log, don't check or keep
-        }
-    }
-    // might have returned, if duplicate (if not, update log history)
-    newLogHistory.push(new logObj(theMsg, currentTimestamp))
-    logHistory = newLogHistory // set pruned list
-    return true // gravy
-}
+
+
+////////////
+// Anti-spam (CLOSED)
+// Keeping this logic around for now (created to stop re-rendering react log spam, worked, but, not helpful when duplicated logs are ommited from a rapidly spammed sequence of logs)
+////////////
+//  let antiLogSpam = false
+//  /** Turn anti-duplicate-spam logging on/off
+//   * @description Helps prevent duplicate log floods (like from a React component re-rendering)
+//   * @param turnOn true or false
+//   * @initially true
+//   */
+//  function setAntiSpam(turnOn: boolean){
+//      antiLogSpam = turnOn
+//      console.log(`[SBCL] You updated anti-duplicate-logs to (${turnOn})`)
+//  }
+//  let minMSbetweenLogs = 420 // should allow for adjusting, worried people might set too high/low (though it might need adjusted so, idk, create an enum of options?)
+//  /** {message, timestamp} */
+//  class logObj {
+//      message
+//      timestamp
+//      constructor(message, timestamp) {
+//          this.message = message;
+//          this.timestamp = timestamp;
+//      }
+//  }
+//  let logHistory: Array<logObj> = [] // keep min log history
+//  /** @returns true == PASS || false == FAIL */
+//  function antiSpamCheck(theMsg: string): boolean{
+//      if(!antiLogSpam){return true} // anti-spam turned off (auto-pass)
+//      const currentTimestamp = Date.now()
+//      let newLogHistory: Array<logObj> = [] // filter out older message
+//      for(let i = 0; i < logHistory.length; i++){
+//          const thisLog = logHistory[i] // {message, timestamp}
+//          const msSinceLastLog = currentTimestamp - thisLog.timestamp
+//          if(msSinceLastLog < minMSbetweenLogs){
+//              newLogHistory.push(thisLog)
+//              // check to see if duplicate
+//              if(thisLog.message === theMsg){
+//                  return false // duplicate entry (return ASAP for responsiveness, when no duplicate, history is updated)
+//              }
+//          }else{
+//              // old log, don't check or keep
+//          }
+//      }
+//      // might have returned, if duplicate (if not, update log history)
+//      newLogHistory.push(new logObj(theMsg, currentTimestamp))
+//      logHistory = newLogHistory // set pruned list
+//      return true // gravy
+//  }
 
 
 /////////////////
@@ -238,13 +250,15 @@ function wrappedLogMessage(logLevelEnumIndex: number, msg: string, obj: any = {H
     if(typeof obj === 'string' && typeof tag === 'object'){const tempTag = tag;tag = obj;obj=tempTag;} // switch params
     if(typeof obj === 'string' && tag === ""){tag = obj;obj = {HireJustinSargent:true};} // quickhand for (msg, tag)
     if(typeof tag !== 'string'){tag = "";} // void out tag value if not string, was the root cuase of a stack overflow error! (Typescript doesn't force types)
-    if(!antiSpamCheck(msg) || !tagCheck(tag))return false 
+    if(!tagCheck(tag))return false // add '!antiSpamCheck(msg) ||' to check if using achieved anti-spam logic
     const printTag = tag.trim().length > 0 ? `[${tag}]` : ""
     const minLogLevel = logLevel
     let returnObj = obj
     if(obj && obj['HireJustinSargent'] === true){returnObj = "";}
+    const now = new Date()
+    const printTimestamp = displayTimestamps ? `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:${now.getMilliseconds()}` : ""
     if(logLevelEnumIndex >= minLogLevel)
-        return {msg: `[${LoggingLevel[logLevelEnumIndex]}]${printTag} ${msg}`, obj: returnObj }
+        return {msg: `${printTimestamp}[${LoggingLevel[logLevelEnumIndex]}]${printTag} ${msg}`, obj: returnObj }
     else
         return false
 }

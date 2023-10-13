@@ -6,7 +6,11 @@ export enum LogLevel { Production, DebugLite, DebugFull }
  * This solution creates a 3-tier tag system that uses SBCL's tag blacklisting capabilities to quickly toggle which logs are printed to the console.
  * @example
  * // Initialize
+ * const q = new QuickTags("MyTag") // (you can optionally override defualt debug _tags)
  * // Usage
+ * con.e("Test log", q.debugLiteTag) // productionTag, debugLiteTag, debugFullTag
+ * @change-log-level
+ * q.SetLogLevel(LogLevel.Production) // initially DebugFull
  */
 export class QuickTags{
     /**
